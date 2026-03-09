@@ -11,7 +11,8 @@ def criar_tabela():
     CREATE TABLE IF NOT EXISTS tarefas (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         titulo TEXT NOT NULL,
-        concluida BOOLEAN NOT NULL DEFAULT 0
+        concluida BOOLEAN NOT NULL DEFAULT 0,
+        data_criacao TEXT
     )
     """)
 

@@ -32,8 +32,17 @@ def criar():
 
 @app.route("/tarefas/<int:id>", methods=["PUT"])
 def atualizar(id):
-    data = request.get_json()
-    tarefa = tarefa_service.atualizar_tarefa(id, data)
+    dados = request.get_json()
+
+    if not dados:
+        return jsonify({"erro": "Dados inválidos"}), 400
+
+    titulo = dados.get("titulo")
+    concluida = dados.get("concluida")
+
+    if isinstance(titulo, dict):
+        titulo = titulo.get("titulo")
+    tarefa = tarefa_service.atualizar_tarefa(id, titulo, concluida)
 
     if tarefa:
         return jsonify(tarefa)

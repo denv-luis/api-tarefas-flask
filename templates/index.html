@@ -46,12 +46,21 @@ checkbox.checked = tarefa.concluida
 checkbox.onchange = () => atualizarTarefa(tarefa.id, checkbox.checked)
 
 const texto = document.createElement("span")
-texto.textContent = " " + tarefa.titulo + " "
+texto.textContent = " " + tarefa.titulo
+
+const dataCriacao = document.createElement("div")
+dataCriacao.textContent = "Criada em: " + tarefa.data_criacao
+dataCriacao.style.fontSize = "12px"
+dataCriacao.style.color = "gray"
 
 if (tarefa.concluida){
 texto.style.textDecoration = "line-through"
+texto.style.color = "gray"
 }
+const botaoEditar = document.createElement("button")
+botaoEditar. textContent = "✏️"
 
+botaoEditar.onclick = () => editarTarefa(tarefa.id, tarefa.titulo)
 const botaoDeletar = document.createElement("button")
 botaoDeletar.textContent = "🗑"
 
@@ -59,7 +68,9 @@ botaoDeletar.onclick = () => deletarTarefa(tarefa.id)
 
 li.appendChild(checkbox)
 li.appendChild(texto)
+li.appendChild(botaoEditar)
 li.appendChild(botaoDeletar)
+li.appendChild(dataCriacao)
 
 lista.appendChild(li)
 
@@ -107,6 +118,22 @@ concluida: concluida
 function deletarTarefa(id) {
 fetch(`http://127.0.0.1:5001/tarefas/${id}`,{
 method: "DELETE"
+})
+.then(() => carregarTarefas())
+.catch(error => console.log(error))
+}
+function editarTarefa(id, tituloAtual){
+
+const novoTitulo = prompt("Editar tarefa:", tituloAtual)
+if(!novoTitulo) return
+fetch(`http://127.0.0.1:5001/tarefas/${id}`,{
+method: "PUT",
+headers:{
+"Content-Type": "application/json"
+},
+body: JSON.stringify({
+titulo: novoTitulo
+})
 })
 .then(() => carregarTarefas())
 }
