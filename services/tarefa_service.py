@@ -5,7 +5,10 @@ from datetime import datetime
 def listar_tarefas():
     tarefas = tarefa_repository.carregar()
 
-    tarefas.sort(key=lambda t: t.get("data_criacao", ""), reverse=True)
+    tarefas.sort(
+        key=lambda t: t.get("data_criacao", ""),
+        reverse=True
+    )
 
     return tarefas
 
