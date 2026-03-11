@@ -3,7 +3,11 @@ from repositories import tarefa_repository
 from datetime import datetime
 
 def listar_tarefas():
-    return tarefa_repository.carregar()
+    tarefas = tarefa_repository.carregar()
+
+    tarefas.sort(key=lambda t: t.get("data_criacao", ""), reverse=True)
+
+    return tarefas
 
 def obter_tarefa_por_id(id):
     tarefas = tarefa_repository.carregar()

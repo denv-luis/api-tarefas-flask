@@ -1,3 +1,4 @@
+from services import usuario_service
 from banco import criar_tabela
 from flask import Flask, request, jsonify
 from services import tarefa_service
@@ -24,8 +25,12 @@ def obter(id):
 def criar():
     data = request.get_json()
 
-    if not data or "titulo" not in data:
-        return jsonify({"erro": "O campo 'titulo' é obrigatório"}), 400
+    if not data:
+        return jsonify({"erro": "Dados não enviados"}), 400
+    
+    titulo = data.get("titulo")
+    if not titulo or titulo.strip() == "":
+        return jsonify({"erro": "O titulo da tarefa é obrigatório"}), 400
 
     tarefa = tarefa_service.criar_tarefa(data)
     return jsonify(tarefa), 201
@@ -55,6 +60,19 @@ def deletar(id):
         return jsonify({"mensagem": "Tarefa deletada"})
 
     return jsonify({"erro": "Tarefa não encontrada"}), 404
+
+@app.route("/health")
+def health():
+    return jsonify({"status": "API funcionando"})
+
+@app.route("/registro", methods=["POST"])
+def registrar_usuario():
+
+    data = request.get_json()
+
+    resultado = usuario_service.registrar_usuario(data)
+
+    return jsonify(resultado)
 
 if __name__ == "__main__":
     criar_tabela()
