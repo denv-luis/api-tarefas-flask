@@ -45,28 +45,17 @@ def obter(id):
 def criar():
     data = request.get_json()
 
-    if not data:
+    try:
+        tarefa = tarefa_service.criar_tarefa(data)
+        return jsonify({
+            "status": "sucesso",
+            "dados": tarefa
+        }), 201
+    except ValueError as erro:
         return jsonify({
             "status": "erro",
-            "mensagem": "Dados não enviados"
+            "mensagem": str(erro)
         }), 400
-
-    titulo = data.get("titulo")
-
-    if not titulo or titulo.strip() == "":
-        return jsonify({
-            "status": "erro",
-            "mensagem": "O título da tarefa é obrigatório"
-        }), 400
-
-    tarefa = tarefa_service.criar_tarefa(data)
-
-    return jsonify({
-        "status": "sucesso",
-        "dados": tarefa
-    }), 201
-
-
 # ATUALIZAR TAREFA
 @app.route("/tarefas/<int:id>", methods=["PUT"])
 def atualizar(id):

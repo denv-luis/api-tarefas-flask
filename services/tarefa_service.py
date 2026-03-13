@@ -1,10 +1,14 @@
 from models.tarefa import Tarefa
 from repositories import tarefa_repository
 from datetime import datetime
+import re
 
 def listar_tarefas():
     tarefas = tarefa_repository.carregar()
+    # converter sqlite Row para dict
+    tarefas = [dict(t) for t in tarefas]
 
+    # ordenar por data
     tarefas.sort(
         key=lambda t: t.get("data_criacao", ""),
         reverse=True
@@ -20,34 +24,44 @@ def obter_tarefa_por_id(id):
     return None
 
 def criar_tarefa(data):
-    tarefas = tarefa_repository.carregar()
-    novo_id = 1 if not tarefas else max(t["id"] for t in tarefas) + 1
 
+    print("DEBUG - criar_tarefa foi chamada")
+    print("DEBUG - dados recebidos:", data)
+
+    if not data:
+        raise ValueError("Dados inválidos")
+    titulo = data.get("titulo")
+    if titulo is None:
+        raise ValueError("O campo 'titulo' é obrigatório")
+    if not isinstance(titulo, str):
+        raise ValueError("O titulo deve ser texto")
+    titulo = titulo.strip()
+    if titulo == "":
+        raise ValueError("O titulo não pode ser vazio")
+    if not re.match(r"^[A-Za-zÀ-ÿ0-9 ]+$", titulo):
+        raise ValueError("O titulo contém caracteres inválidos")
+    
     data_criacao = datetime.now().strftime("%d %m %Y %H:%M")
 
     tarefa = Tarefa(
-        id=novo_id,
-        titulo=str(data["titulo"]),
+        id=None,
+        titulo=titulo,
         data_criacao=data_criacao
     )
 
-    tarefas.append(tarefa.to_dict())
-    tarefa_repository.salvar(tarefas)
+    tarefa_repository.criar(
+        tarefa.titulo,
+        tarefa.data_criacao
+    )
     return tarefa.to_dict()
 
 def atualizar_tarefa(id, titulo=None, concluida=None):
+    tarefa_repository.atualizar(id, titulo, concluida)
     tarefas = tarefa_repository.carregar()
 
     for t in tarefas:
         if t["id"] == id:
-            if titulo is not None:
-                if isinstance(titulo, dict):
-                    titulo = titulo.get("titulo", "")
-                t["titulo"] = str(titulo)
-            if concluida is not None:
-                t["concluida"] = concluida
-            tarefa_repository.salvar(tarefas)
-            return t
+            return dict(t)
 
     return None
 
@@ -56,8 +70,7 @@ def deletar_tarefa(id):
 
     for t in tarefas:
         if t["id"] == id:
-            tarefas.remove(t)
-            tarefa_repository.salvar(tarefas)
+            tarefa_repository.deletar(id)
             return True
 
     return False

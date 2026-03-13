@@ -1,3 +1,4 @@
+import bcrypt
 from repositories import usuario_repository
 
 def registrar_usuario(data):
@@ -6,6 +7,7 @@ def registrar_usuario(data):
     email = data.get("email")
     senha = data.get("senha")
 
+    #validação
     if not nome or not email or not senha:
         return {"erro": "Todos os campos são obrigatórios"}
 
@@ -13,7 +15,14 @@ def registrar_usuario(data):
 
     if usuario_existente:
         return {"erro": "Email já cadastrado"}
+    
+    #criptografar senha
+    senha_hash = bcrypt.hashpw(
+        senha.encode("utf-8"),
+        bcrypt.gensalt()
+    ).decode("utf-8")
 
-    usuario_repository.criar_usuario(nome, email, senha)
+    #salvar no banco
+    usuario_repository.criar_usuario(nome, email, senha_hash)
 
     return {"mensagem": "Usuário criado com sucesso"}
