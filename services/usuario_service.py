@@ -1,11 +1,18 @@
 import bcrypt
 from repositories import usuario_repository
 
+def autenticar(email, senha):
+    usuario = usuario_repository.buscar_por_email(email)
+    if not usuario:
+        return None
+    if str(usuario["senha"]) != str(senha):
+        return None
+    return usuario
 def registrar_usuario(data):
 
     nome = data.get("nome")
     email = data.get("email")
-    senha = data.get("senha")
+    senha = str(data.get("senha"))
 
     #validação
     if not nome or not email or not senha:

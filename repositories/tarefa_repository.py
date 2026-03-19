@@ -13,18 +13,24 @@ def carregar():
     return tarefas
 
 
-def criar(titulo, data_criacao):
+def criar(titulo, usuario_id):
     conn = conectar()
     cursor = conn.cursor()
 
     cursor.execute(
         "INSERT INTO tarefas (titulo, data_criacao) VALUES (?, ?)",
-        (titulo, data_criacao)
+        (titulo, usuario_id)
     )
 
     conn.commit()
+    tarefa_id = cursor.lastrowid
     conn.close()
 
+    return {
+        "id": tarefa_id,
+        "titulo": titulo,
+        "usuario_id": usuario_id
+    }
 
 def atualizar(id, titulo=None, concluida=None):
     conn = conectar()
@@ -57,3 +63,13 @@ def deletar(id):
 
     conn.commit()
     conn.close()
+
+def listar(usuario_id):
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT id, titulo, concluida, data_criacao FROM tarefas WHERE usuario_id = ?",
+    )
+    tarefas = cursor.fetchall()
+    conn.close()
+    return tarefas

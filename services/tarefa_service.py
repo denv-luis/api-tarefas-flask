@@ -3,8 +3,8 @@ from repositories import tarefa_repository
 from datetime import datetime
 import re
 
-def listar_tarefas():
-    tarefas = tarefa_repository.carregar()
+def listar_tarefas(usuario_id):
+    tarefas = tarefa_repository.listar(usuario_id)
     # converter sqlite Row para dict
     tarefas = [dict(t) for t in tarefas]
 
@@ -23,7 +23,7 @@ def obter_tarefa_por_id(id):
             return t
     return None
 
-def criar_tarefa(data):
+def criar_tarefa(data, usuario_id):
 
     print("DEBUG - criar_tarefa foi chamada")
     print("DEBUG - dados recebidos:", data)
@@ -41,19 +41,7 @@ def criar_tarefa(data):
     if not re.match(r"^[A-Za-zÀ-ÿ0-9 ]+$", titulo):
         raise ValueError("O titulo contém caracteres inválidos")
     
-    data_criacao = datetime.now().strftime("%d %m %Y %H:%M")
-
-    tarefa = Tarefa(
-        id=None,
-        titulo=titulo,
-        data_criacao=data_criacao
-    )
-
-    tarefa_repository.criar(
-        tarefa.titulo,
-        tarefa.data_criacao
-    )
-    return tarefa.to_dict()
+    return tarefa_repository.criar(titulo, usuario_id)
 
 def atualizar_tarefa(id, titulo=None, concluida=None):
     tarefa_repository.atualizar(id, titulo, concluida)

@@ -3,9 +3,40 @@ from flask import Flask, request, jsonify, render_template
 from banco import criar_tabela
 from services import tarefa_service
 from services import usuario_service
+from flasgger import Swagger
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 
 app = Flask(__name__)
+# JWT
+app.config["JWT_SECRET_KEY"] = "super-secret-key"
+jwt = JWTManager(app)
 
+# Swagger config
+Swagger_config = {
+    "headers": [],
+    "specs": [
+        {
+            "endpoint": 'apispec_1',
+            "route": '/apispec_1.json',
+            "rule_filter": lambda rule: True,
+            "model_filter": lambda tag: True,
+        }
+    ],
+    "static_url_path": "/flasgger_static",
+    "swagger_ui": True,
+    "specs_route": "/apidocs"
+}
+swagger_template = {
+    "securityDefinitions": {
+        "Bearer": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header",
+            "description": "Digite: Bearer SEU_TOKEN"
+        }
+    }
+}
+Swagger(app, config=Swagger_config, template=swagger_template)
 
 @app.route("/")
 def pagina_inicial():
@@ -14,8 +45,18 @@ def pagina_inicial():
 
 # LISTAR TAREFAS
 @app.route("/tarefas", methods=["GET"])
+@jwt_required()
 def listar():
-    tarefas = tarefa_service.listar_tarefas()
+    """
+    ---
+    security:
+      - Bearer: []
+    responses:
+      200:
+        description: Listar tarefas
+    """
+    usuario_id = get_jwt_identity()
+    tarefas = tarefa_service.listar_tarefas(usuario_id)
 
     return jsonify({
         "status": "sucesso",
@@ -42,11 +83,35 @@ def obter(id):
 
 # CRIAR TAREFA
 @app.route("/tarefas", methods=["POST"])
+@jwt_required()
 def criar():
+    """
+    ---
+    tags:
+      - Tarefas
+    security:
+      - Bearer: []
+    parameters:
+    - in: body
+      name: body
+      required: true
+      schema:
+        type: object
+        properties:
+          titulo:
+            type: string
+            example: Estudar Flask
+    response:
+      201:
+        description: Tarefa criada com sucesso
+      400:
+        description: Erro de validação
+    """
     data = request.get_json()
+    usuario_id = get_jwt_identity()
 
     try:
-        tarefa = tarefa_service.criar_tarefa(data)
+        tarefa = tarefa_service.criar_tarefa(data, usuario_id)
         return jsonify({
             "status": "sucesso",
             "dados": tarefa
@@ -70,10 +135,8 @@ def atualizar(id):
     titulo = dados.get("titulo")
     concluida = dados.get("concluida")
 
-    if isinstance(titulo, dict):
-        titulo = titulo.get("titulo")
-
-    tarefa = tarefa_service.atualizar_tarefa(id, titulo, concluida)
+    usuario_id = get_jwt_identity()
+    tarefa = tarefa_service.atualizar_tarefa(id, titulo, concluida, usuario_id)
 
     if not tarefa:
         return jsonify({
@@ -89,9 +152,11 @@ def atualizar(id):
 
 # DELETAR TAREFA
 @app.route("/tarefas/<int:id>", methods=["DELETE"])
+@jwt_required()
 def deletar(id):
 
-    deletada = tarefa_service.deletar_tarefa(id)
+    usuario_id = get_jwt_identity()
+    deletada = tarefa_service.deletar_tarefa(id, usuario_id)
 
     if not deletada:
         return jsonify({
@@ -116,6 +181,27 @@ def health():
 # REGISTRO DE USUÁRIO
 @app.route("/registro", methods=["POST"])
 def registrar_usuario():
+    """
+    ---
+    tags:
+      - Usuarios
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          properties:
+            nome:
+              type: string
+            email:
+              type: string
+            senha:
+              type: string
+    responses:
+      200:
+        description: Usuário registrado
+    """
 
     data = request.get_json()
 
@@ -129,6 +215,49 @@ def registrar_usuario():
 
     return jsonify(resultado)
 
+# LOGIN DE USUARIO
+@app.route("/login", methods=["POST"])
+def login():
+    """
+    ---
+    tags:
+      - Usuarios
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          properties:
+            email:
+              type: string
+            senha:
+              type: string
+    responses:
+      200:
+        description: Login realizado com sucesso
+      401:
+        description: Credenciais inválidas
+    """
+
+    data = request.get_json()
+
+    email = data.get("email")
+    senha = data.get("senha")
+
+    usuario = usuario_service.autenticar(email, senha)
+
+    if not usuario:
+        return jsonify({
+            "status": "erro",
+            "mensagem": "Credenciais inválidas"
+        }), 401
+
+    token = create_access_token(identity=usuario["id"])
+
+    return jsonify({
+        "token": token
+    })
 
 if __name__ == "__main__":
     criar_tabela()
