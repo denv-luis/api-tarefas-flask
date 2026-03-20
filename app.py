@@ -55,7 +55,7 @@ def listar():
       200:
         description: Listar tarefas
     """
-    usuario_id = get_jwt_identity()
+    usuario_id = int(get_jwt_identity())
     tarefas = tarefa_service.listar_tarefas(usuario_id)
 
     return jsonify({
@@ -66,6 +66,7 @@ def listar():
 
 # OBTER UMA TAREFA
 @app.route("/tarefas/<int:id>", methods=["GET"])
+@jwt_required()
 def obter(id):
     tarefa = tarefa_service.obter_tarefa_por_id(id)
 
@@ -92,15 +93,17 @@ def criar():
     security:
       - Bearer: []
     parameters:
-    - in: body
-      name: body
-      required: true
-      schema:
-        type: object
-        properties:
-          titulo:
-            type: string
-            example: Estudar Flask
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+           - titulo:
+          properties:
+            titulo:
+              type: string
+              example: Estudar Flask
     response:
       201:
         description: Tarefa criada com sucesso
@@ -108,7 +111,7 @@ def criar():
         description: Erro de validação
     """
     data = request.get_json()
-    usuario_id = get_jwt_identity()
+    usuario_id = int(get_jwt_identity())
 
     try:
         tarefa = tarefa_service.criar_tarefa(data, usuario_id)
@@ -123,6 +126,7 @@ def criar():
         }), 400
 # ATUALIZAR TAREFA
 @app.route("/tarefas/<int:id>", methods=["PUT"])
+@jwt_required()
 def atualizar(id):
     dados = request.get_json()
 
@@ -135,7 +139,7 @@ def atualizar(id):
     titulo = dados.get("titulo")
     concluida = dados.get("concluida")
 
-    usuario_id = get_jwt_identity()
+    usuario_id = int(get_jwt_identity())
     tarefa = tarefa_service.atualizar_tarefa(id, titulo, concluida, usuario_id)
 
     if not tarefa:
@@ -155,7 +159,7 @@ def atualizar(id):
 @jwt_required()
 def deletar(id):
 
-    usuario_id = get_jwt_identity()
+    usuario_id = int(get_jwt_identity())
     deletada = tarefa_service.deletar_tarefa(id, usuario_id)
 
     if not deletada:
@@ -253,7 +257,7 @@ def login():
             "mensagem": "Credenciais inválidas"
         }), 401
 
-    token = create_access_token(identity=usuario["id"])
+    token = create_access_token(identity=str(usuario["id"]))
 
     return jsonify({
         "token": token

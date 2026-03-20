@@ -69,6 +69,7 @@ def listar(usuario_id):
     cursor = conn.cursor()
     cursor.execute(
         "SELECT id, titulo, concluida, data_criacao FROM tarefas WHERE usuario_id = ?",
+        (usuario_id,)
     )
     tarefas = cursor.fetchall()
     conn.close()
