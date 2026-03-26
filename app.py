@@ -73,6 +73,7 @@ def listar():
 @app.route("/tarefas/<int:id>", methods=["GET"])
 @jwt_required()
 def obter(id):
+    usuario_id = int(get_jwt_identity())
     tarefa = tarefa_service.obter_tarefa_por_id(id, usuario_id)
 
     if not tarefa:
