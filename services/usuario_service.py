@@ -5,7 +5,9 @@ def autenticar(email, senha):
     usuario = usuario_repository.buscar_por_email(email)
     if not usuario:
         return None
-    if str(usuario["senha"]) != str(senha):
+    senha_valida = bcrypt.checkpw(senha.encode(), usuario["senha"].encode())
+
+    if not senha_valida:
         return None
     return usuario
 def registrar_usuario(data):
@@ -16,20 +18,29 @@ def registrar_usuario(data):
 
     #validação
     if not nome or not email or not senha:
-        return {"erro": "Todos os campos são obrigatórios"}
-
+        return {"status": "erro",
+                "mensagem": "Todos os campos são obrigatórios"
+                }
+    #verificar se já existe
     usuario_existente = usuario_repository.buscar_por_email(email)
 
     if usuario_existente:
-        return {"erro": "Email já cadastrado"}
+        return {"status": "erro",
+                "dados": None,
+                "mensagem": "Email já cadastrado"
+                }
     
     #criptografar senha
     senha_hash = bcrypt.hashpw(
-        senha.encode("utf-8"),
+        senha.encode(),
         bcrypt.gensalt()
-    ).decode("utf-8")
+    )
+    #montar usuario
+    usuario = {
+        "nome": nome,
+        "email": email,
+        "senha": senha_hash
+    }
 
     #salvar no banco
-    usuario_repository.criar_usuario(nome, email, senha_hash)
-
-    return {"mensagem": "Usuário criado com sucesso"}
+    return usuario_repository.salvar(usuario)

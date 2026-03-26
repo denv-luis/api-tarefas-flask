@@ -10,6 +10,10 @@ app = Flask(__name__)
 # JWT
 app.config["JWT_SECRET_KEY"] = "super-secret-key"
 jwt = JWTManager(app)
+try:
+    criar_tabela()
+except Exception as e:
+    print("Erro ao criar banco:", e)
 
 # Swagger config
 Swagger_config = {
@@ -60,7 +64,8 @@ def listar():
 
     return jsonify({
         "status": "sucesso",
-        "dados": tarefas
+        "dados": tarefas,
+        "mensagem": "Tarefas listadas com sucesso"
     })
 
 
@@ -68,7 +73,7 @@ def listar():
 @app.route("/tarefas/<int:id>", methods=["GET"])
 @jwt_required()
 def obter(id):
-    tarefa = tarefa_service.obter_tarefa_por_id(id)
+    tarefa = tarefa_service.obter_tarefa_por_id(id, usuario_id)
 
     if not tarefa:
         return jsonify({
@@ -78,7 +83,8 @@ def obter(id):
 
     return jsonify({
         "status": "sucesso",
-        "dados": tarefa
+        "dados": tarefa,
+        "mensagem": "Tarefa encontrada"
     })
 
 
@@ -99,7 +105,7 @@ def criar():
         schema:
           type: object
           required:
-           - titulo:
+           - titulo
           properties:
             titulo:
               type: string
@@ -117,11 +123,13 @@ def criar():
         tarefa = tarefa_service.criar_tarefa(data, usuario_id)
         return jsonify({
             "status": "sucesso",
-            "dados": tarefa
+            "dados": tarefa,
+            "mensagem": "Tarefa criada com sucesso"
         }), 201
     except ValueError as erro:
         return jsonify({
             "status": "erro",
+            "dados": None,
             "mensagem": str(erro)
         }), 400
 # ATUALIZAR TAREFA
@@ -170,7 +178,8 @@ def deletar(id):
 
     return jsonify({
         "status": "sucesso",
-        "mensagem": "Tarefa deletada"
+        "dados": None,
+        "mensagem": "Tarefa deletada com sucesso"
     })
 
 
@@ -260,9 +269,12 @@ def login():
     token = create_access_token(identity=str(usuario["id"]))
 
     return jsonify({
-        "token": token
+        "status": "sucesso",
+        "dados": {
+            "token": token
+        },
+        "mensagem": "Login realizado com sucesso"
     })
 
 if __name__ == "__main__":
-    criar_tabela()
     app.run(debug=True, port=5001)

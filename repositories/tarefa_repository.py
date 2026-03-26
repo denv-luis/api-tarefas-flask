@@ -1,4 +1,5 @@
 from banco import conectar
+from datetime import datetime
 
 def carregar():
     conn = conectar()
@@ -18,17 +19,25 @@ def criar(titulo, usuario_id):
     cursor = conn.cursor()
 
     cursor.execute(
-        "INSERT INTO tarefas (titulo, data_criacao) VALUES (?, ?)",
+        "INSERT INTO tarefas (titulo, usuario_id) VALUES (?, ?)",
         (titulo, usuario_id)
     )
 
     conn.commit()
     tarefa_id = cursor.lastrowid
+
+    cursor.execute(
+        "SELECT id, titulo, concluida, data_criacao FROM tarefas WHERE id = ?",
+        (tarefa_id,)
+    )
+    tarefa = cursor.fetchone()
     conn.close()
 
     return {
-        "id": tarefa_id,
-        "titulo": titulo,
+        "id": tarefa["id"],
+        "titulo": tarefa["titulo"],
+        "concluida": bool(tarefa["concluida"]),
+        "data_criacao": tarefa["data_criacao"],
         "usuario_id": usuario_id
     }
 
@@ -73,4 +82,13 @@ def listar(usuario_id):
     )
     tarefas = cursor.fetchall()
     conn.close()
-    return tarefas
+    tarefas_formatadas = [
+        {
+            "id": t[0],
+            "titulo": t[1],
+            "concluida": bool(t[2]),
+            "data_criacao": t[3]
+        }
+        for t in tarefas
+    ]
+    return tarefas_formatadas

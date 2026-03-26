@@ -1,64 +1,48 @@
-from models.tarefa import Tarefa
 from repositories import tarefa_repository
-from datetime import datetime
-import re
+from schemas.tarefa_schema import TarefaSchema
+
+schema = TarefaSchema()
 
 def listar_tarefas(usuario_id):
     tarefas = tarefa_repository.listar(usuario_id)
-    # converter sqlite Row para dict
-    tarefas = [dict(t) for t in tarefas]
 
     # ordenar por data
     tarefas.sort(
-        key=lambda t: t.get("data_criacao", ""),
+        key=lambda t: t.get("data_criacao") or "",
         reverse=True
     )
 
     return tarefas
 
-def obter_tarefa_por_id(id):
-    tarefas = tarefa_repository.carregar()
+def obter_tarefa_por_id(id, usuario_id):
+    tarefas = tarefa_repository.listar(usuario_id)
     for t in tarefas:
         if t["id"] == id:
             return t
     return None
 
 def criar_tarefa(data, usuario_id):
-
-    print("DEBUG - criar_tarefa foi chamada")
-    print("DEBUG - dados recebidos:", data)
-
     if not data:
         raise ValueError("Dados inválidos")
-    titulo = data.get("titulo")
-    if titulo is None:
-        raise ValueError("O campo 'titulo' é obrigatório")
-    if not isinstance(titulo, str):
-        raise ValueError("O titulo deve ser texto")
-    titulo = titulo.strip()
-    if titulo == "":
-        raise ValueError("O titulo não pode ser vazio")
-    if not re.match(r"^[A-Za-zÀ-ÿ0-9 ]+$", titulo):
-        raise ValueError("O titulo contém caracteres inválidos")
-    
+    erros = schema.validate(data)
+    if erros:
+        raise ValueError(erros)
+    titulo = data["titulo"].strip()
+
     return tarefa_repository.criar(titulo, usuario_id)
 
-def atualizar_tarefa(id, titulo=None, concluida=None):
+def atualizar_tarefa(id, titulo=None, concluida=None, usuario_id=None):
+    tarefa = obter_tarefa_por_id(id, usuario_id)
+
+    if not tarefa:
+        return None
     tarefa_repository.atualizar(id, titulo, concluida)
-    tarefas = tarefa_repository.carregar()
+    return obter_tarefa_por_id(id, usuario_id)
 
-    for t in tarefas:
-        if t["id"] == id:
-            return dict(t)
+def deletar_tarefa(id, usuario_id):
+    tarefa = obter_tarefa_por_id(id, usuario_id)
 
-    return None
-
-def deletar_tarefa(id):
-    tarefas = tarefa_repository.carregar()
-
-    for t in tarefas:
-        if t["id"] == id:
-            tarefa_repository.deletar(id)
-            return True
-
-    return False
+    if not tarefa:
+            return False
+    tarefa_repository.deletar(id)
+    return True

@@ -32,3 +32,21 @@ def buscar_por_email(email):
         "email": usuario[2],
         "senha": usuario[3]
     }
+def salvar(usuario):
+    conn = conectar()
+    cursor = conn.cursor()
+
+    senha = usuario["senha"].decode()
+
+    cursor.execute(
+        "INSERT INTO usuarios (nome, email, senha) VALUES (?, ?, ?)",
+        (usuario["nome"], usuario["email"], senha)
+    )
+    conn.commit()
+    conn.close()
+
+    return {
+        "status": "sucesso",
+        "dados": None,
+        "mensagem": "Usuário registrado com sucesso"
+    }
